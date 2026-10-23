@@ -337,11 +337,38 @@ body.single .viewas{visibility:hidden}
 .rolekey{line-height:1.6}
 .obpay{background:var(--card);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);margin-bottom:10px}
 .envpicks{padding:6px 14px}
+.tut{position:fixed;inset:0;z-index:55;background:var(--scrim);display:flex;align-items:center;justify-content:center;padding:16px}
+.tut[hidden]{display:none}
+.tutcard{background:var(--card);color:var(--text);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:16px 18px 18px;width:100%;max-width:420px;max-height:calc(100vh - 32px);overflow-y:auto}
+.tuttop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tutkicker{color:var(--muted);font-weight:600}
+.tutskip{min-height:44px;padding:0 10px;margin-right:-10px}
+.tutdots{justify-content:flex-start;margin:4px 0 16px}
+.tutic{width:52px;height:52px;border-radius:14px;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;margin-bottom:12px}
+.tutic svg{width:26px;height:26px}
+.tutstep{color:var(--muted)}
+.tutcard h2{margin:2px 0 8px;font-size:20px;line-height:1.25}
+.tutbody{margin:0 0 18px;line-height:1.55}
+.tutfoot{display:flex;gap:10px}.tutfoot .btn{flex:1;min-height:44px}
+.tutfoot .btn[disabled]{opacity:.45}
+.learnlist ul{margin:6px 0 0;padding-left:18px;line-height:1.7}
 .envpick{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
 .envpick:last-of-type{border-bottom:none}
 .envpick label{display:flex;align-items:center;gap:10px;flex:1;margin:0;font-weight:500;color:var(--text);cursor:pointer}
 .envpick input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);flex:none}
 .envpick input[inputmode]{width:96px;text-align:right}
+.obenv{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;column-gap:6px;row-gap:4px;padding:8px 0;border-bottom:1px solid var(--line)}
+.obenv:last-of-type{border-bottom:none}
+.obenv .obtick{grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:center;min-height:44px;margin:0;cursor:pointer}
+.obenv .obtick input{width:22px;height:22px;accent-color:var(--accent)}
+.obenv .obenvname{grid-column:2;grid-row:1;min-width:0;width:100%;border:1px solid var(--line);background:var(--input);border-radius:10px;padding:9px 10px;font-size:15px;font-weight:500;color:var(--text);min-height:44px}
+.obenv .obenvdel{grid-column:3;grid-row:1;width:44px;height:44px;display:grid;place-items:center;border:0;background:none;color:var(--muted);border-radius:10px;cursor:pointer}
+.obenv .obenvdel:hover,.obenv .obenvdel:focus-visible{color:var(--bad,#dc2626);background:var(--accent-soft)}
+.obenv .obamt{grid-column:2;grid-row:2;justify-self:start;align-self:center;margin:0;color:var(--muted)}
+.obenv input[inputmode]{grid-column:2;grid-row:2;width:110px;justify-self:end;text-align:right;border:1px solid var(--line);background:var(--input);border-radius:10px;padding:9px 10px;font-size:15px;min-height:44px;color:var(--text)}
+.obenv input:focus{outline:none;border-color:var(--accent);background:var(--card)}
+.obenv [aria-invalid=true]{border-color:var(--bad,#dc2626)}
+.obenvadd{margin:10px 0 4px}
 .sumrow{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .sumrow:last-child{border-bottom:none}
 .sumrow .small{display:block}
@@ -659,7 +686,7 @@ function parseAmt(v){ var n=parseFloat(String(v).replace(/[$,\s]/g,'')); return 
 function demo(){
   var now=Date.now(), H=3600000, D=86400000;
   var members=[
-    {id:'m1',name:'Callum',role:'admin',av:''},
+    {id:'m1',name:'Parent',role:'admin',av:''},
     {id:'m2',name:'Partner',role:'admin',av:''},
     {id:'m3',name:'Teen',role:'member',av:''},
     {id:'m4',name:'Kid',role:'member',av:''}
@@ -700,7 +727,7 @@ function demo(){
   G.best={checkin:3,goal:1,track:4};
   G.wxp={}; G.wxp[weekKey(now)]={m1:40,m2:55,m3:25,m4:30}; G.wxp[weekKey(now-7*D)]={m1:60,m2:45,m3:20,m4:35};
   // demo pay schedule: two earners, next paydays in the future (use "Simulate payday" to try it now)
-  st.pay.earners=[{id:'p1',name:'Callum',memberId:'m1',freq:'weekly',amount:1450,next:dateISO(now+2*D)},{id:'p2',name:'Partner',memberId:'m2',freq:'fortnightly',amount:1980,next:dateISO(now+6*D)}];
+  st.pay.earners=[{id:'p1',name:'Parent',memberId:'m1',freq:'weekly',amount:1450,next:dateISO(now+2*D)},{id:'p2',name:'Partner',memberId:'m2',freq:'fortnightly',amount:1980,next:dateISO(now+6*D)}];
   var acct={e1:'Groceries & Fuel account',e2:'Groceries & Fuel account',e3:'ING Bills Account'};
   st.envelopes.forEach(function(e){ e.account=acct[e.id]||''; });
   st.goals.forEach(function(g){ g.account='Savings Maximiser'; g.perPay=g.id==='g1'?40:25; });
@@ -878,7 +905,7 @@ function permSummary(p){
 function memberEditor(m,p,extra,open){
   var perms=m.perms||preset(m.kind);
   return '<div class="medit" data-medit="'+esc(m.id||p)+'"><div class="row">'+avatar(m,true)+
-    '<input name="'+p+'name" value="'+esc(m.name)+'" maxlength="20" aria-label="Name" placeholder="Name">'+
+    '<input name="'+p+'name" value="'+esc(m.name)+'" maxlength="20" aria-label="Name" placeholder="Member name">'+
     '<select name="'+p+'kind" data-preset="1" aria-label="Role" style="width:104px">'+Object.keys(ROLES).map(function(k){return '<option value="'+k+'"'+(m.kind===k?' selected':'')+'>'+ROLES[k]+'</option>';}).join('')+'</select></div>'+
     '<details class="pdet"'+(open?' open':'')+'><summary>'+ic('lock','sm')+' <span class="psum">'+esc(permSummary(perms))+'</span></summary><div class="perms">'+
     PERMS.map(function(x){ return '<label class="perm"><input type="checkbox" name="'+p+x[0]+'" data-perm="'+x[0]+'"'+(perms[x[0]]?' checked':'')+'><span><b>'+x[1]+'</b><small>'+x[2]+'</small></span></label>'; }).join('')+
@@ -978,21 +1005,21 @@ function delMember(id){
 
 /* ---------- onboarding ---------- */
 var OB=null;
-var STARTERS={
-  single:[['Groceries','cart',500],['Fuel','fuel',250],['Bills','zap',500],['Takeaway','utensils',100],['Fun money','sparkles',150],['Health','shield',80],['Subscriptions','tv',40]],
-  couple:[['Groceries','cart',800],['Fuel','fuel',300],['Bills','zap',650],['Takeaway','utensils',150],['Date nights','heart',150],['Fun money','sparkles',200],['Health','shield',120]],
-  family:[['Groceries','cart',1100],['Fuel','fuel',350],['Bills','zap',700],['Takeaway','utensils',120],['Fun money','sparkles',150],['Kids\' activities','activity',200],['School costs','book',100],['Health','shield',150]]
+var STARTERS={ // v7.1: names and icons only. Every starter envelope starts at $0 and its name can be changed.
+  single:[['Groceries','cart'],['Fuel','fuel'],['Bills','zap'],['Takeaway','utensils'],['Fun money','sparkles'],['Health','shield'],['Subscriptions','tv']],
+  couple:[['Groceries','cart'],['Fuel','fuel'],['Bills','zap'],['Takeaway','utensils'],['Date nights','heart'],['Fun money','sparkles'],['Health','shield']],
+  family:[['Groceries','cart'],['Fuel','fuel'],['Bills','zap'],['Takeaway','utensils'],['Fun money','sparkles'],['Kids\' activities','activity'],['School costs','book'],['Health','shield']]
 };
-function obSteps(){ return ['welcome','household','mode','you'].concat(OB.household==='single'?[]:['members']).concat(['budget','done']); }
+function obSteps(){ return ['welcome','household','mode','you'].concat(OB.household==='single'?[]:['members']).concat(['learn','budget','done']); }
 function obReset(){
   var h=OB.household;
   OB.requests=h!=='couple';
-  OB.members=h==='single'?[]:[{id:'d1',name:'Partner',def:'Partner',kind:'admin',perms:preset('admin'),color:AVC[1]}];
-  OB.envs=STARTERS[h].map(function(s,i){ return {name:s[0],icon:s[1],amount:s[2],base:s[2],on:i<(h==='family'?6:5)}; });
+  OB.members=h==='single'?[]:[{id:'d1',name:'',def:'',kind:'admin',perms:preset('admin'),color:AVC[1]}]; // v7.1: no pre-filled names
+  OB.envs=STARTERS[h].map(function(s,i){ return {name:s[0],icon:s[1],amount:'',on:i<(h==='family'?6:5)}; });
   OB.earners=null;
 }
 function startOnboarding(restart){
-  OB={step:'welcome',restart:!!restart,household:'family',mode:'game',me:{name:restart&&S?me().name:'',color:restart&&S&&me().color||AVC[0]},goal:{on:true,target:2000},fundOn:'month',err:''};
+  OB={step:'welcome',restart:!!restart,household:'family',mode:'game',me:{name:restart&&S?me().name:'',color:restart&&S&&me().color||AVC[0]},goal:{on:false,target:''},fundOn:'month',err:''};
   if(restart&&S){ OB.household=hh(); OB.mode=S.setup.mode==='sleek'?'sleek':'game'; }
   obReset();
   if(restart&&S){
@@ -1052,7 +1079,7 @@ var OBV={
     var m={name:OB.me.name||'?',color:OB.me.color};
     return '<h1>About you</h1><p class="sub">You\'ll be the admin'+(OB.household==='single'?'':', and can add others next')+'.</p>'+
       '<div class="card obme">'+avatar(m,true)+'<div class="grow"><b id="obMeName">'+esc(OB.me.name||'Your name')+'</b><div class="small">All permissions</div></div><span class="pill role">'+ic('shield','sm')+' Admin</span></div>'+
-      '<div class="field"><label for="obName">Your name</label><input id="obName" name="ob_name" maxlength="20" value="'+esc(OB.me.name)+'" placeholder="e.g. Callum" autocomplete="given-name"></div>'+
+      '<div class="field"><label for="obName">Your name</label><input id="obName" name="ob_name" maxlength="20" value="'+esc(OB.me.name)+'" placeholder="Your name" autocomplete="given-name"></div>'+
       '<div class="field" role="group" aria-labelledby="obColLbl"><label id="obColLbl">Avatar colour</label><div class="swatches">'+AVC.map(function(c,i){
         return '<label title="Colour '+(i+1)+'"><input type="radio" name="ob_color" aria-label="Colour '+(i+1)+'" value="'+c+'"'+(OB.me.color===c?' checked':'')+'><span style="--avc:'+c+'"></span></label>'; }).join('')+'</div></div>'+
       obFoot('Continue');
@@ -1078,18 +1105,31 @@ var OBV={
       '<p class="small">With a birth year, the calendar shows the age they\'re turning. Kids and teens will see these too.</p>'+
       obFoot('Continue','Skip');
   },
+  learn:function(){ // v7.1: optional. Nothing opens unless they choose it.
+    var seen=!!OB.tutSeen;
+    return '<h1>New to envelope budgeting?</h1><p class="sub">A quick tutorial explains how envelopes work in OrbitAll Money. It has six short cards and takes about a minute. You can also open it any time from Settings.</p>'+
+      '<div class="card small learnlist"><b>It covers</b><ul><li>What an envelope is</li><li>Giving every dollar a job</li><li>Spending from an envelope</li><li>What to do when one runs low</li><li>The end of the month</li><li>Saving for goals</li></ul></div>'+
+      '<div class="obfoot"><div class="err" id="obErr"></div>'+(seen?
+        '<button type="button" class="btn primary block" data-ob="next">Continue</button><button type="button" class="btn ghost block" data-ob="tutorial">View the tutorial again</button>':
+        '<button type="button" class="btn primary block" data-ob="tutorial">Yes, show me</button><button type="button" class="btn ghost block" data-ob="skip">Skip for now</button>')+'</div>';
+  },
   budget:function(){
-    return '<h1>Quick budget start</h1><p class="sub">All optional. You can fine-tune everything later. Each envelope starts with its monthly amount, as money you\'ve already set aside for this month.</p>'+
+    return '<h1>Quick budget start</h1><p class="sub">All optional. You can fine-tune everything later. Every envelope starts at $0. You fill them from your pay with Start new month or on payday.</p>'+
       '<h2>Pay schedule</h2>'+OB.earners.map(function(e,i){
         return '<div class="earner obpay"><div class="small"><b>'+esc(e.name)+'</b> · take-home pay</div><div class="paygrid"><input name="ob_ea_'+i+'" inputmode="decimal" value="'+esc(e.amount)+'" placeholder="Take-home pay $" aria-label="Pay for '+esc(e.name)+'">'+
           '<select name="ob_ef_'+i+'" aria-label="How often">'+['weekly','fortnightly','monthly'].map(function(f){return '<option value="'+f+'"'+(e.freq===f?' selected':'')+'>'+FREQ_LABEL[f]+'</option>';}).join('')+'</select></div>'+
           '<label class="small" for="obEd'+i+'" style="margin:6px 0 0">Next payday</label><input type="date" id="obEd'+i+'" name="ob_ed_'+i+'" value="'+esc(e.next)+'" aria-label="Next payday for '+esc(e.name)+'"></div>';
       }).join('')+
       '<div class="field"><label for="obFund">Fill envelopes</label><select id="obFund" name="ob_fund"><option value="month"'+(OB.fundOn!=='payday'?' selected':'')+'>Once a month (Start new month)</option><option value="payday"'+(OB.fundOn==='payday'?' selected':'')+'>Each payday (top up from each pay)</option></select><div class="hint">Leave pay blank to skip. Each payday makes a “Transfers to do” checklist.</div></div>'+
-      '<h2>Starter envelopes</h2><div class="card envpicks">'+OB.envs.map(function(e,i){
-        return '<div class="envpick"><label><input type="checkbox" name="ob_ev_'+i+'"'+(e.on?' checked':'')+'><span class="mini">'+ic(e.icon)+'</span><span class="grow">'+esc(e.name)+'</span></label>'+
-          '<input name="ob_eam_'+i+'" inputmode="decimal" value="'+(e.amount===''?'':esc(e.amount))+'" placeholder="$0" aria-label="Monthly amount for '+esc(e.name)+'"></div>';
-      }).join('')+'<div class="hint">Suggested monthly amounts. They shrink to fit the pay you enter (until you change one yourself). Clear one to start it at $0.</div></div>'+
+      '<h2>Starter envelopes</h2><div class="card envpicks" id="obEnvs">'+OB.envs.map(function(e,i){
+        var n=i+1;
+        return '<div class="obenv" data-envrow="'+i+'"><label class="obtick"><input type="checkbox" name="ob_ev_'+i+'"'+(e.on?' checked':'')+' aria-label="Include envelope '+n+'"></label>'+
+          '<input class="obenvname" name="ob_en_'+i+'" maxlength="30" value="'+esc(e.name)+'" placeholder="Envelope name" aria-label="Envelope '+n+' name" autocomplete="off">'+
+          '<button type="button" class="obenvdel" data-ob="delenv" data-i="'+i+'" aria-label="Remove envelope '+n+'">'+ic('trash','sm')+'</button>'+
+          '<label class="obamt small" for="obEam'+i+'">Monthly amount</label><input id="obEam'+i+'" name="ob_eam_'+i+'" inputmode="decimal" value="'+(e.amount===''?'':esc(e.amount))+'" placeholder="$0" aria-label="Envelope '+n+' monthly amount"></div>';
+      }).join('')+(OB.envs.length?'':'<div class="small" style="padding:10px 0">No envelopes yet.</div>')+
+      '<button type="button" class="btn block obenvadd" data-ob="addenv">'+ic('plus','sm')+' Add an envelope</button>'+
+      '<div class="hint">Every envelope starts at $0. Rename any of them, untick the ones you don\'t need, and set a monthly amount now or later.</div></div>'+
       '<div class="banner info" id="obBudgetSum" aria-live="polite">'+obBudgetSum()+'</div>'+
       '<h2>Savings goal</h2><div class="card envpicks"><div class="envpick"><label><input type="checkbox" name="ob_goal"'+(OB.goal.on?' checked':'')+'><span class="mini">'+ic('shield')+'</span><span class="grow">Emergency fund</span></label>'+
       '<input name="ob_gt" inputmode="decimal" value="'+esc(OB.goal.target)+'" placeholder="Target $" aria-label="Emergency fund target"></div></div>'+
@@ -1105,7 +1145,7 @@ var OBV={
       row(HH[OB.household][0],'Household',HH[OB.household][1]+(OB.household==='couple'?(OB.requests?' · requests on':' · no requests'):''))+
       row(OB.mode==='game'?'trophy':'layers','Experience',OB.mode==='game'?'Game mode'+(OB.household==='single'?' · personal bests':' · leaderboard'):'Sleek mode')+
       row('users','People',people.join(', '))+
-      row('mail','Envelopes',envs.length?envs.length+' envelopes · '+money(tot)+' a month':'None yet')+
+      row('mail','Envelopes',envs.length?envs.length+' envelope'+(envs.length===1?'':'s')+' · all start at $0'+(tot?' · '+money(tot)+' a month planned':''):'None yet')+
       row('briefcase','Pay schedule',pays.length?pays.map(function(e){return esc(e.name)+' '+FREQ_LABEL[e.freq].toLowerCase()+' '+money(+e.amount);}).join(', '):'Not set yet')+
       row('target','Goal',OB.goal.on?'Emergency fund · '+money(+OB.goal.target||0):'None yet')+
       (function(){ var n=Object.keys(OB.bdays||{}).filter(function(k){return OB.bdays[k] && (k==='me'||OB.members.some(function(m){return m.id===k;}));}).length; return n?row('gift','Birthdays',n+' added to the calendar'):''; })()+'</div>'+
@@ -1113,6 +1153,48 @@ var OBV={
   }
 };
 var OBS_KEY=KEY+'.onboarding';
+/* v7.1: envelope budgeting tutorial. Optional: offered once in setup, and in Settings > Help. Never opens by itself. */
+var TUT=null;
+function tutCtx(){
+  var onb=OB && !document.getElementById('onb').hidden;
+  if(onb) return {req:OB.household==='single'?false:(OB.household==='couple'?!!OB.requests:true),game:OB.mode==='game'};
+  return {req:!!(S&&requestsOn()),game:!!(S&&gameOn())};
+}
+function tutSteps(c){ return [
+  {icon:'mail',t:'What is an envelope?',b:'An envelope is money set aside for one kind of spending, such as Groceries, Fuel or Bills. Each one shows how much is left to spend. In OrbitAll Money every new envelope starts at $0 until you give it money.'},
+  {icon:'wallet',t:'Give every dollar a job',b:'Pay and other income land in Unallocated income first. You then share it out into envelopes and goals until every dollar has a job. Start new month, or a top-up on payday, does this for you using each envelope\'s monthly amount.'},
+  {icon:'cart',t:'Spend from the envelope',b:'When you buy something, the money comes out of the matching envelope. Import a bank statement and common shops are sorted into envelopes for you, or record a spend yourself.'+(c.req?' Members can ask for money from an envelope, and an approver says yes or no.':'')},
+  {icon:'alert',t:'When an envelope runs low',b:'Move money across from another envelope with Add money, or record income you haven\'t imported yet.'+(c.req?' Members can send a request for funds instead.':'')+' If an envelope goes below $0 it shows in red, so you can sort it out early.'},
+  {icon:'repeat',t:'At the end of the month',b:'When you start a new month, what\'s left in each envelope either stays there (handy for bills that change from month to month) or rolls into a goal. You choose for each envelope.'},
+  {icon:'target',t:'Save for goals',b:'Goals are for bigger things, like an emergency fund or a holiday. Add money whenever you can, and the progress bar shows how close you are.'+(c.game?' In Game mode, steady habits also earn points and badges.':'')}
+]; }
+function openTutorial(onDone){ TUT={i:0,onDone:onDone||null,ret:document.activeElement}; renderTut(); }
+function renderTut(){
+  var el=document.getElementById('tut');
+  if(!el){ el=document.createElement('div'); el.id='tut'; el.className='tut'; el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true'); el.setAttribute('aria-labelledby','tutTitle'); document.body.appendChild(el); }
+  var st=tutSteps(tutCtx()), n=st.length, s=st[TUT.i], last=TUT.i===n-1;
+  el.hidden=false;
+  el.innerHTML='<div class="tutcard" data-tut-step="'+(TUT.i+1)+'"><div class="tuttop"><span class="small tutkicker">Envelope budgeting basics</span><button type="button" class="btn ghost tutskip" data-tut="skip">Skip tutorial</button></div>'+
+    '<div class="dots tutdots" role="progressbar" aria-label="Tutorial progress" aria-valuemin="1" aria-valuemax="'+n+'" aria-valuenow="'+(TUT.i+1)+'">'+st.map(function(x,j){ return '<i class="'+(j===TUT.i?'on':(j<TUT.i?'past':''))+'"></i>'; }).join('')+'</div>'+
+    '<div class="tutic">'+ic(s.icon)+'</div><div class="small tutstep">Step '+(TUT.i+1)+' of '+n+'</div><h2 id="tutTitle">'+esc(s.t)+'</h2><p class="tutbody">'+esc(s.b)+'</p>'+
+    '<div class="tutfoot"><button type="button" class="btn" data-tut="back"'+(TUT.i?'':' disabled')+'>Back</button><button type="button" class="btn primary" data-tut="next">'+(last?'Done':'Next')+'</button></div></div>';
+  var f=el.querySelector('[data-tut=next]'); if(f) f.focus();
+}
+function closeTutorial(){
+  var el=document.getElementById('tut'); if(el){ el.hidden=true; el.innerHTML=''; }
+  var t=TUT; TUT=null; if(!t) return;
+  if(S && !(OB && !document.getElementById('onb').hidden)){ S.tutorialSeen=Date.now(); save(); }
+  if(t.onDone) t.onDone(); else if(t.ret && t.ret.focus && document.body.contains(t.ret)) t.ret.focus();
+}
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-tut]'); if(!b||!TUT) return;
+  var a=b.getAttribute('data-tut'), n=tutSteps(tutCtx()).length;
+  if(a==='skip') return closeTutorial();
+  if(a==='back'){ if(TUT.i>0){ TUT.i--; renderTut(); } return; }
+  if(a==='next'){ if(TUT.i<n-1){ TUT.i++; renderTut(); } else closeTutorial(); }
+});
+document.addEventListener('keydown',function(ev){ if(TUT && ev.key==='Escape'){ ev.preventDefault(); closeTutorial(); } });
+document.addEventListener('input',function(ev){ var t=ev.target; if(t && t.getAttribute && t.getAttribute('aria-invalid')==='true' && t.closest('#onb')) t.removeAttribute('aria-invalid'); });
 function obIncome(){ // monthly take-home from what's typed on the budget step
   var tot=0, any=false;
   (OB.earners||[]).forEach(function(e,i){ var a=document.querySelector('#onb [name=ob_ea_'+i+']'), f=document.querySelector('#onb [name=ob_ef_'+i+']');
@@ -1127,7 +1209,7 @@ function obBudgetSum(){
   var left=round2(inc-env);
   return 'Pay about <b>'+money(inc)+'</b> a month · envelopes <b>'+money(env)+'</b> · '+(left>=0?'<b>'+money(left)+'</b> left for goals and buffer.':'<b class="neg">'+money(-left)+' more than your pay</b>. Lower some amounts.');
 }
-function obScale(){
+function obScale(){ return; // v7.1: starter amounts are no longer suggested, so nothing to scale
   var inc=obIncome(); if(!inc) return;
   var base=0, idx=[];
   OB.envs.forEach(function(e,i){ var a=document.querySelector('#onb [name=ob_eam_'+i+']'), c=document.querySelector('#onb [name=ob_ev_'+i+']'); if(a && !a.hasAttribute('data-touched') && e.base && (!c||c.checked)){ base+=e.base; idx.push(i); } });
@@ -1155,10 +1237,11 @@ function obRead(){
   else if(s==='birthdays'){ OB.bdays=OB.bdays||{}; document.querySelectorAll('#onb [data-bdk]').forEach(function(el){ OB.bdays[el.getAttribute('data-bdk')]=el.value; }); }
   else if(s==='budget'){
     OB.earners.forEach(function(e,i){ e.amount=obq('ob_ea_'+i).value.trim(); e.freq=obq('ob_ef_'+i).value; e.next=obq('ob_ed_'+i).value; });
-    OB.envs.forEach(function(e,i){ e.on=obq('ob_ev_'+i).checked; var v=obq('ob_eam_'+i).value.trim(); e.amount=v===''?'':parseAmt(v); });
+    OB.envs.forEach(function(e,i){ e.on=obq('ob_ev_'+i).checked; var nm=obq('ob_en_'+i); if(nm) e.name=nm.value.replace(/\s+/g,' ').trim(); var v=obq('ob_eam_'+i).value.trim(); e.amount=v===''?'':parseAmt(v); });
     OB.goal.on=obq('ob_goal').checked; OB.goal.target=parseAmt(obq('ob_gt').value)||''; OB.fundOn=obq('ob_fund').value;
   }
 }
+function obDupNames(){ var seen={}, d=[]; OB.envs.forEach(function(e){ if(!e.on||!e.name) return; var k=e.name.toLowerCase(); if(seen[k] && d.indexOf(seen[k])<0) d.push(seen[k]); else if(!seen[k]) seen[k]=e.name; }); return d; }
 function obValidate(){
   var s=OB.step;
   if(s==='you' && !OB.me.name) return 'Add your name so everyone knows who\'s who.';
@@ -1172,6 +1255,7 @@ function obValidate(){
     for(var j=0;j<OB.earners.length;j++){ var e=OB.earners[j];
       if(e.amount!=='' && !(parseAmt(e.amount)>0)) return 'Pay for '+e.name+' should be more than $0, or leave it blank.';
       if(parseAmt(e.amount)>0 && !/^\d{4}-\d{2}-\d{2}$/.test(e.next)) return 'Pick the next payday for '+e.name+'.'; }
+    for(var q=0;q<OB.envs.length;q++){ var ev=OB.envs[q]; if(ev.on && !ev.name){ OB.errField='ob_en_'+q; return 'Give each ticked envelope a name, or untick it.'; } if(ev.name.length>30){ OB.errField='ob_en_'+q; return 'Keep envelope names to 30 characters or fewer.'; } }
     if(OB.envs.some(function(e){return e.on && e.amount!=='' && !(e.amount>=0);})) return 'Envelope amounts must be $0 or more.';
     if(OB.goal.on && !(+OB.goal.target>0)) return 'Give the Emergency fund a target, or untick it.';
   }
@@ -1191,7 +1275,7 @@ function obFinish(){
   var now=Date.now();
   var members=[{id:'m1',name:OB.me.name,kind:'admin',role:'admin',av:'',perms:preset('admin'),color:OB.me.color}];
   OB.members.forEach(function(m,i){ members.push({id:'m'+(i+2),name:m.name,kind:m.kind,role:roleOf(m.kind),av:'',perms:m.perms,color:m.color||AVC[(i+1)%AVC.length]}); });
-  var envelopes=OB.envs.filter(function(e){return e.on;}).map(function(e,i){ var a=+e.amount||0; return {id:'e'+(i+1),name:e.name,icon:e.icon,monthly:a,balance:a,owner:''}; });
+  var envelopes=OB.envs.filter(function(e){return e.on && e.name;}).map(function(e,i){ var a=+e.amount||0; return {id:'e'+(i+1),name:e.name,icon:e.icon,monthly:a,balance:0,owner:''}; }); // v7.1: balances start at $0
   var goals=OB.goal.on?[{id:'g1',name:'Emergency fund',icon:'shield',target:+OB.goal.target,saved:0,date:''}]:[];
   var st={version:1,currentUser:'m1',tab:'home',members:members,envelopes:envelopes,goals:goals,requests:[],activity:[],reqFilter:'pending',
     setup:{done:true,household:OB.household,mode:OB.mode,requests:OB.household==='single'?false:(OB.household==='couple'?!!OB.requests:true),at:now}};
@@ -1202,6 +1286,7 @@ function obFinish(){
   st.pay.fundOn=OB.fundOn==='payday'?'payday':'month';
   var bd=OB.bdays||{}, pairs=[['me',members[0]]].concat(OB.members.map(function(m,i){return [m.id,members[i+1]];}));
   st.events=[]; pairs.forEach(function(p){ var d=bd[p[0]]; if(d && ISO_RE.test(d) && p[1]) st.events.push(mkBirthday(p[1],d,'m1')); });
+  if(OB.tutSeen) st.tutorialSeen=now;
   st.activity.unshift({id:uid(),ts:now,actor:'m1',icon:'check-circle',text:'set up the budget: '+HH[OB.household][1]+', '+(OB.mode==='game'?'Game':'Sleek')+' mode, '+envelopes.length+' envelopes'});
   if(S) snapshot('restart setup');
   S=st; obClose(); save(); processPaydays(); save(); render(); flushFx();
@@ -1219,8 +1304,11 @@ document.addEventListener('click',function(ev){
   obRead();
   if(a==='addm'){ var k=t.getAttribute('data-kind'), n=OB.members.filter(function(m){return m.kind===k;}).length+1;
     OB.members.forEach(function(m){ m.open=false; });
-    OB.members.push({id:'d'+uid(),name:ROLES[k]+(n>1?' '+n:''),def:ROLES[k]+(n>1?' '+n:''),kind:k,perms:preset(k),color:AVC[(OB.members.length+1)%AVC.length],open:k!=='admin'}); return renderOnb(); }
+    OB.members.push({id:'d'+uid(),name:'',def:'',kind:k,perms:preset(k),color:AVC[(OB.members.length+1)%AVC.length],open:k!=='admin'}); return renderOnb(); }
   if(a==='bdays'){ var be=obValidate(); if(be){ var bel=document.getElementById('obErr'); if(bel) bel.textContent=be; return; } OB.step='birthdays'; return renderOnb(); }
+  if(a==='addenv'){ OB.envs.push({name:'',icon:'wallet',amount:'',on:true}); renderOnb(); var ni=obq('ob_en_'+(OB.envs.length-1)); if(ni){ ni.scrollIntoView({block:'center'}); ni.focus(); } return; }
+  if(a==='delenv'){ var di=+t.getAttribute('data-i'); OB.envs.splice(di,1); renderOnb(); var ea=document.querySelector('#onb [data-ob=addenv]'); if(ea) ea.scrollIntoView({block:'center'}); return; }
+  if(a==='tutorial'){ return openTutorial(function(){ if(OB){ OB.tutSeen=true; if(OB.step==='learn') obGo(1); else renderOnb(); } }); }
   if(a==='delm'){ OB.members.splice(+t.getAttribute('data-i'),1); return renderOnb(); }
   if(a==='skip'){
     if(OB.step==='members') OB.members=OB.members.filter(function(m){return m.name && !(m.def && m.name===m.def);}); // skipping adds nobody made up
@@ -1229,7 +1317,8 @@ document.addEventListener('click',function(ev){
     return obGo(1);
   }
   if(a==='next'||a==='finish'){
-    var err=obValidate(); if(err){ var el=document.getElementById('obErr'); if(el) el.textContent=err; return; }
+    OB.errField=''; var err=obValidate(); if(err){ var el=document.getElementById('obErr'); if(el) el.textContent=err; var ef=OB.errField&&obq(OB.errField); if(ef){ ef.setAttribute('aria-invalid','true'); ef.focus(); } return; }
+    if(OB.step==='budget'){ var dn=obDupNames(); if(dn.length && !confirm('You have more than one envelope called '+dn.map(function(x){return '"'+x+'"';}).join(', ')+'. Keep both?')) return; }
     return a==='finish'?obFinish():obGo(1);
   }
 });
@@ -1663,7 +1752,7 @@ function envCard(e,compact){
   if(!compact) h+=rollUI(e);
   if(!compact){
     var acts=(canReq?reqBtn:'');
-    if(isAdmin()) acts+='<button class="btn" data-action="addmoney" data-id="'+e.id+'">+ Add money</button><button class="btn ghost" data-action="editenv" data-id="'+e.id+'">Edit</button>';
+    if(isAdmin()) acts+='<button class="btn" data-action="addmoney" data-id="'+e.id+'">+ Add money</button><button class="btn ghost" data-action="renameenv" data-id="'+e.id+'" aria-label="Rename '+esc(e.name)+'">'+ic('edit','sm')+' Rename</button><button class="btn ghost" data-action="editenv" data-id="'+e.id+'">Edit</button>';
     if(acts) h+='<div class="actions">'+acts+'</div>';
   }
   return h+'</div>';
@@ -1934,6 +2023,28 @@ function cancelReq(id){
   log('rotate','cancelled their request for '+money(r.amount)+' from '+(e?e.name:'an envelope'));
   save(); render(); toast('Request cancelled');
 }
+function envNameCheck(name,selfId){ // trims, collapses spaces, max 30, flags a duplicate (case-insensitive)
+  name=String(name||'').replace(/\s+/g,' ').trim();
+  if(!name) return {err:'Give the envelope a name.'};
+  if(name.length>30) return {err:'Keep the name to 30 characters or fewer.'};
+  return {name:name,dup:S.envelopes.some(function(x){ return x.id!==selfId && String(x.name).trim().toLowerCase()===name.toLowerCase(); })};
+}
+function dupOk(name){ return confirm('There\'s already an envelope called "'+name+'". Use this name anyway?'); }
+function sRenameEnv(id){
+  if(!isAdmin()) return;
+  var e=env(id); if(!e) return;
+  openSheet('Rename envelope',
+    field('Envelope name','<input name="name" maxlength="30" value="'+esc(e.name)+'" autocomplete="off">','Up to 30 characters. The balance, history, requests, bank rules, goals and rollover stay linked to this envelope.'),
+    'Save name',function(){
+      var inp=document.querySelector('#sheetForm [name=name]'), r=envNameCheck(inp?inp.value:'',e.id);
+      if(r.err) return sheetErr(r.err,inp);
+      if(r.name===e.name){ closeSheet(); return; }
+      if(r.dup && !dupOk(r.name)) return;
+      var old=e.name; e.name=r.name;
+      log('edit','renamed the "'+old+'" envelope to "'+r.name+'"');
+      done('Renamed to '+r.name);
+    });
+}
 function sEnvelope(id){
   if(!isAdmin()) return;
   var e=id?env(id):null;
@@ -1944,8 +2055,9 @@ function sEnvelope(id){
     (isSingle()?'':field('Whose envelope','<select name="owner"><option value="">Shared (everyone)</option>'+S.members.map(function(m){return '<option value="'+m.id+'"'+(e&&e.owner===m.id?' selected':'')+'>'+esc(m.name)+'</option>';}).join('')+'</select>','People who can\'t see all balances still see their own envelopes.'))+
     (e?'':field('Starting balance (AUD)',amtInput('balance',''),'Leave blank to start with the monthly amount. It comes out of Unallocated income.')+ufundBox(0)),
     e?'Save changes':'Create envelope',function(){
-      var name=fval('name'), icon=fval('icon')||'wallet', monthly=parseAmt(fval('monthly'));
-      if(!name) return sheetErr('Give the envelope a name.');
+      var nc=envNameCheck(fval('name'),e?e.id:null), name=nc.name, icon=fval('icon')||'wallet', monthly=parseAmt(fval('monthly'));
+      if(nc.err) return sheetErr(nc.err,document.querySelector('#sheetForm [name=name]'));
+      if(nc.dup && (!e||e.name.toLowerCase()!==name.toLowerCase()) && !dupOk(name)) return;
       if(!(monthly>=0)) return sheetErr('Enter a monthly amount (can be $0).');
       if(e){
         var changes=[]; if(e.name!==name) changes.push('renamed "'+e.name+'" to "'+name+'"'); if(e.monthly!==monthly) changes.push('set '+name+' monthly allocation to '+money(monthly));
@@ -1988,7 +2100,7 @@ function sRecordIncome(){
   if(!isAdmin()) return;
   openSheet('Record income',
     '<div class="banner info">Money that came in (pay, a refund, a gift) that you haven\'t imported from the bank. It goes to Unallocated income, ready to give a job. Unallocated now: <b>'+money(S.unallocated||0)+'</b>.</div>'+
-    field('Amount (AUD)',amtInput('amount'))+field('What was it? (optional)','<input name="what" maxlength="60" placeholder="e.g. Callum\'s pay">'),
+    field('Amount (AUD)',amtInput('amount'))+field('What was it? (optional)','<input name="what" maxlength="60" placeholder="e.g. Pay, refund or gift">'),
     'Add to Unallocated',function(){
       var a=parseAmt(fval('amount')), w=fval('what');
       if(!(a>0)) return sheetErr('Enter an amount more than $0.',document.querySelector('#sheetForm [name=amount]'));
@@ -2141,6 +2253,7 @@ function sSettings(){
   }
   if(can('addTx')||can('seeAll')) body+='<button type="button" class="btn block" data-tab="bank" style="margin-bottom:10px">'+ic('bank','sm')+' Bank accounts &amp; statement import</button>';
   body+=paySettings()+
+  '<div class="field" id="helpSettings"><label>Help</label><button type="button" class="btn block" data-action="tutorial">'+ic('help','sm')+' View envelope budgeting tutorial</button><div class="hint">Six short cards, about a minute.'+(S.tutorialSeen?' Last viewed '+whenText(S.tutorialSeen)+'.':'')+'</div></div>'+
   '<div class="banner">Your data is saved in this browser on this device only. It doesn\'t sync between phones yet.</div>'+
   '<div class="field"><label>Sounds and celebrations (this device)</label>'+
   '<label class="toggle"><span>'+ic('volume','sm')+' Sounds</span><input type="checkbox" id="soundToggle"'+(S.settings.sound?' checked':'')+'></label>'+
@@ -3363,6 +3476,8 @@ document.addEventListener('click',function(ev){
     case 'cancelreq': cancelReq(id); break;
     case 'newenv': sEnvelope(null); break;
     case 'editenv': sEnvelope(id); break;
+    case 'renameenv': sRenameEnv(id); break;
+    case 'tutorial': closeSheet(); openTutorial(); break;
     case 'delenv': delEnv(id); break;
     case 'addmoney': sAddMoney(id); break;
     case 'topup': sTopUp(); break;
