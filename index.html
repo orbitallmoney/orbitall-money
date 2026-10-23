@@ -367,6 +367,16 @@ body.single .viewas{visibility:hidden}
 .obenv .obamt{grid-column:2;grid-row:2;justify-self:start;align-self:center;margin:0;color:var(--muted)}
 .obenv input[inputmode]{grid-column:2;grid-row:2;width:110px;justify-self:end;text-align:right;border:1px solid var(--line);background:var(--input);border-radius:10px;padding:9px 10px;font-size:15px;min-height:44px;color:var(--text)}
 .obenv input:focus{outline:none;border-color:var(--accent);background:var(--card)}
+.obenv .obamt.obs{grid-row:3}
+.obenv input.obstart{grid-row:3}
+.obassign{display:flex;flex-direction:column;gap:4px;margin:0 0 10px}
+.obassign .assignrow{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px}
+.obassign .assignleft{display:flex;justify-content:space-between;align-items:baseline;font-size:16px}
+.obassign .assignleft b{font-size:18px}
+.obver{margin-top:4px;opacity:.75;font-size:12px}
+.aboutrow{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px}
+.dangerzone{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.dangerzone label{color:var(--bad,#dc2626)}
 .obenv [aria-invalid=true]{border-color:var(--bad,#dc2626)}
 .obenvadd{margin:10px 0 4px}
 .sumrow{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -1004,13 +1014,14 @@ function delMember(id){
 }
 
 /* ---------- onboarding ---------- */
+var APP_VERSION='7.2';
 var OB=null;
 var STARTERS={ // v7.1: names and icons only. Every starter envelope starts at $0 and its name can be changed.
   single:[['Groceries','cart'],['Fuel','fuel'],['Bills','zap'],['Takeaway','utensils'],['Fun money','sparkles'],['Health','shield'],['Subscriptions','tv']],
   couple:[['Groceries','cart'],['Fuel','fuel'],['Bills','zap'],['Takeaway','utensils'],['Date nights','heart'],['Fun money','sparkles'],['Health','shield']],
   family:[['Groceries','cart'],['Fuel','fuel'],['Bills','zap'],['Takeaway','utensils'],['Fun money','sparkles'],['Kids\' activities','activity'],['School costs','book'],['Health','shield']]
 };
-function obSteps(){ return ['welcome','household','mode','you'].concat(OB.household==='single'?[]:['members']).concat(['learn','budget','done']); }
+function obSteps(){ return ['welcome','household','mode','you'].concat(OB.household==='single'?[]:['members']).concat(['learn','bank','budget','done']); }
 function obReset(){
   var h=OB.household;
   OB.requests=h!=='couple';
@@ -1019,7 +1030,7 @@ function obReset(){
   OB.earners=null;
 }
 function startOnboarding(restart){
-  OB={step:'welcome',restart:!!restart,household:'family',mode:'game',me:{name:restart&&S?me().name:'',color:restart&&S&&me().color||AVC[0]},goal:{on:false,target:''},fundOn:'month',err:''};
+  OB={step:'welcome',restart:!!restart,household:'family',mode:'game',me:{name:restart&&S?me().name:'',color:restart&&S&&me().color||AVC[0]},goal:{on:false,target:''},fundOn:'month',bank:'',err:''};
   if(restart&&S){ OB.household=hh(); OB.mode=S.setup.mode==='sleek'?'sleek':'game'; }
   obReset();
   if(restart&&S){
@@ -1057,7 +1068,7 @@ var OBV={
       (OB.restart?'<button type="button" class="btn ghost block" data-ob="cancel">Cancel and keep my budget</button>':'')+
       (!OB.restart&&getSnap()?'<button type="button" class="btn block" data-ob="undo">'+ic('rotate','sm')+' Undo: bring back my data from '+whenText(getSnap().at)+'</button>':'')+
       (!OB.restart?'<label class="btn ghost block filebtn" for="backupFile">'+ic('upload','sm')+' Restore from a backup file</label><input type="file" id="backupFile" accept=".json,application/json" class="vh">':'')+
-      '<p class="small center">Your data stays on this device.</p></div>';
+      '<p class="small center">Your data stays on this device.</p><p class="small center obver" id="obVersion">Version '+APP_VERSION+'</p></div>';
   },
   household:function(){
     var h=OB.household;
@@ -1113,23 +1124,32 @@ var OBV={
         '<button type="button" class="btn primary block" data-ob="next">Continue</button><button type="button" class="btn ghost block" data-ob="tutorial">View the tutorial again</button>':
         '<button type="button" class="btn primary block" data-ob="tutorial">Yes, show me</button><button type="button" class="btn ghost block" data-ob="skip">Skip for now</button>')+'</div>';
   },
+  bank:function(){ // v7.2: the only money the app starts with is what's really in the bank
+    return '<h1>What\'s in your bank right now?</h1><p class="sub">Add up today\'s balance across all your everyday and savings accounts. This becomes your starting money, ready to give jobs in the next step. Leave it blank or enter $0 to start fresh.</p>'+
+      '<div class="field"><label for="obBank">Total in your bank accounts (AUD)</label><input id="obBank" name="ob_bank" inputmode="decimal" autocomplete="off" value="'+esc(OB.bank||'')+'" placeholder="$0.00">'+
+      '<div class="hint">Dollars and cents, like 2450.75. Leave out credit cards and loans.</div></div>'+
+      '<div class="banner info small">Nothing is added for you. Your budget starts at $0 plus whatever you enter here.</div>'+
+      obFoot('Continue','Skip, start at $0');
+  },
   budget:function(){
-    return '<h1>Quick budget start</h1><p class="sub">All optional. You can fine-tune everything later. Every envelope starts at $0. You fill them from your pay with Start new month or on payday.</p>'+
+    var bank=obBank();
+    return '<h1>Quick budget start</h1><p class="sub">All optional. You can fine-tune everything later. '+(bank>0?'Give your starting money jobs by putting some in each envelope. Anything you don\'t assign stays in Unallocated.':'Every envelope starts at $0. You fill them from your pay with Start new month or on payday.')+'</p>'+
       '<h2>Pay schedule</h2>'+OB.earners.map(function(e,i){
         return '<div class="earner obpay"><div class="small"><b>'+esc(e.name)+'</b> · take-home pay</div><div class="paygrid"><input name="ob_ea_'+i+'" inputmode="decimal" value="'+esc(e.amount)+'" placeholder="Take-home pay $" aria-label="Pay for '+esc(e.name)+'">'+
           '<select name="ob_ef_'+i+'" aria-label="How often">'+['weekly','fortnightly','monthly'].map(function(f){return '<option value="'+f+'"'+(e.freq===f?' selected':'')+'>'+FREQ_LABEL[f]+'</option>';}).join('')+'</select></div>'+
           '<label class="small" for="obEd'+i+'" style="margin:6px 0 0">Next payday</label><input type="date" id="obEd'+i+'" name="ob_ed_'+i+'" value="'+esc(e.next)+'" aria-label="Next payday for '+esc(e.name)+'"></div>';
       }).join('')+
       '<div class="field"><label for="obFund">Fill envelopes</label><select id="obFund" name="ob_fund"><option value="month"'+(OB.fundOn!=='payday'?' selected':'')+'>Once a month (Start new month)</option><option value="payday"'+(OB.fundOn==='payday'?' selected':'')+'>Each payday (top up from each pay)</option></select><div class="hint">Leave pay blank to skip. Each payday makes a “Transfers to do” checklist.</div></div>'+
-      '<h2>Starter envelopes</h2><div class="card envpicks" id="obEnvs">'+OB.envs.map(function(e,i){
+      '<h2>Starter envelopes</h2>'+obAssignBox()+'<div class="card envpicks" id="obEnvs">'+OB.envs.map(function(e,i){
         var n=i+1;
         return '<div class="obenv" data-envrow="'+i+'"><label class="obtick"><input type="checkbox" name="ob_ev_'+i+'"'+(e.on?' checked':'')+' aria-label="Include envelope '+n+'"></label>'+
           '<input class="obenvname" name="ob_en_'+i+'" maxlength="30" value="'+esc(e.name)+'" placeholder="Envelope name" aria-label="Envelope '+n+' name" autocomplete="off">'+
           '<button type="button" class="obenvdel" data-ob="delenv" data-i="'+i+'" aria-label="Remove envelope '+n+'">'+ic('trash','sm')+'</button>'+
-          '<label class="obamt small" for="obEam'+i+'">Monthly amount</label><input id="obEam'+i+'" name="ob_eam_'+i+'" inputmode="decimal" value="'+(e.amount===''?'':esc(e.amount))+'" placeholder="$0" aria-label="Envelope '+n+' monthly amount"></div>';
+          '<label class="obamt small" for="obEam'+i+'">Monthly amount</label><input id="obEam'+i+'" name="ob_eam_'+i+'" inputmode="decimal" value="'+(e.amount===''?'':esc(e.amount))+'" placeholder="$0" aria-label="Envelope '+n+' monthly amount">'+
+          (bank>0?'<label class="obamt obs small" for="obEs'+i+'">Start with</label><input id="obEs'+i+'" class="obstart" name="ob_es_'+i+'" inputmode="decimal" value="'+(e.start===''||e.start==null?'':esc(e.start))+'" placeholder="$0" aria-label="Envelope '+n+' starting amount">':'')+'</div>';
       }).join('')+(OB.envs.length?'':'<div class="small" style="padding:10px 0">No envelopes yet.</div>')+
       '<button type="button" class="btn block obenvadd" data-ob="addenv">'+ic('plus','sm')+' Add an envelope</button>'+
-      '<div class="hint">Every envelope starts at $0. Rename any of them, untick the ones you don\'t need, and set a monthly amount now or later.</div></div>'+
+      '<div class="hint">'+(bank>0?'Start with is what goes in now, from your starting money. It can\'t add up to more than '+money(bank)+'. ':'Every envelope starts at $0. ')+'Rename any of them, untick the ones you don\'t need, and set a monthly amount now or later.</div></div>'+
       '<div class="banner info" id="obBudgetSum" aria-live="polite">'+obBudgetSum()+'</div>'+
       '<h2>Savings goal</h2><div class="card envpicks"><div class="envpick"><label><input type="checkbox" name="ob_goal"'+(OB.goal.on?' checked':'')+'><span class="mini">'+ic('shield')+'</span><span class="grow">Emergency fund</span></label>'+
       '<input name="ob_gt" inputmode="decimal" value="'+esc(OB.goal.target)+'" placeholder="Target $" aria-label="Emergency fund target"></div></div>'+
@@ -1145,7 +1165,8 @@ var OBV={
       row(HH[OB.household][0],'Household',HH[OB.household][1]+(OB.household==='couple'?(OB.requests?' · requests on':' · no requests'):''))+
       row(OB.mode==='game'?'trophy':'layers','Experience',OB.mode==='game'?'Game mode'+(OB.household==='single'?' · personal bests':' · leaderboard'):'Sleek mode')+
       row('users','People',people.join(', '))+
-      row('mail','Envelopes',envs.length?envs.length+' envelope'+(envs.length===1?'':'s')+' · all start at $0'+(tot?' · '+money(tot)+' a month planned':''):'None yet')+
+      row('mail','Envelopes',envs.length?envs.length+' envelope'+(envs.length===1?'':'s')+(envs.some(function(e){return obBank()>0&&+e.start>0;})?'':' · all start at $0')+(tot?' · '+money(tot)+' a month planned':''):'None yet')+
+      row('banknote','Starting money',(function(){ var b=obBank(), as=0; OB.envs.forEach(function(e){ if(e.on&&e.name&&+e.start>0) as+=+e.start; }); as=round2(as); return b>0?money(b)+(as>0?' · '+money(as)+' in envelopes · '+money(round2(b-as))+' left to assign':' · all in Unallocated, ready to assign'):'$0 · nothing added'; })())+
       row('briefcase','Pay schedule',pays.length?pays.map(function(e){return esc(e.name)+' '+FREQ_LABEL[e.freq].toLowerCase()+' '+money(+e.amount);}).join(', '):'Not set yet')+
       row('target','Goal',OB.goal.on?'Emergency fund · '+money(+OB.goal.target||0):'None yet')+
       (function(){ var n=Object.keys(OB.bdays||{}).filter(function(k){return OB.bdays[k] && (k==='me'||OB.members.some(function(m){return m.id===k;}));}).length; return n?row('gift','Birthdays',n+' added to the calendar'):''; })()+'</div>'+
@@ -1234,13 +1255,35 @@ function obRead(){
   else if(s==='mode'){ x=document.querySelector('#onb [name=ob_mode]:checked'); if(x) OB.mode=x.value; }
   else if(s==='you'){ OB.me.name=obq('ob_name').value.trim(); x=document.querySelector('#onb [name=ob_color]:checked'); if(x) OB.me.color=x.value; }
   else if(s==='members'){ var root=document.getElementById('onb'); OB.members.forEach(function(m,i){ var r=readEditor(root,'ob_m'+i+'_'); m.name=r.name; m.kind=r.kind; m.perms=r.perms; }); }
+  else if(s==='bank'){ OB.bank=obq('ob_bank').value.trim(); }
   else if(s==='birthdays'){ OB.bdays=OB.bdays||{}; document.querySelectorAll('#onb [data-bdk]').forEach(function(el){ OB.bdays[el.getAttribute('data-bdk')]=el.value; }); }
   else if(s==='budget'){
     OB.earners.forEach(function(e,i){ e.amount=obq('ob_ea_'+i).value.trim(); e.freq=obq('ob_ef_'+i).value; e.next=obq('ob_ed_'+i).value; });
-    OB.envs.forEach(function(e,i){ e.on=obq('ob_ev_'+i).checked; var nm=obq('ob_en_'+i); if(nm) e.name=nm.value.replace(/\s+/g,' ').trim(); var v=obq('ob_eam_'+i).value.trim(); e.amount=v===''?'':parseAmt(v); });
+    OB.envs.forEach(function(e,i){ e.on=obq('ob_ev_'+i).checked; var nm=obq('ob_en_'+i); if(nm) e.name=nm.value.replace(/\s+/g,' ').trim(); var v=obq('ob_eam_'+i).value.trim(); e.amount=v===''?'':parseAmt(v); var sv=obq('ob_es_'+i); if(sv){ var s2=sv.value.trim(); e.start=s2===''?'':parseAmt(s2); } });
     OB.goal.on=obq('ob_goal').checked; OB.goal.target=parseAmt(obq('ob_gt').value)||''; OB.fundOn=obq('ob_fund').value;
   }
 }
+function obBank(){ var v=parseAmt(OB&&OB.bank!=null?OB.bank:''); return v>0?v:0; }
+function obBankErr(raw){
+  var v=String(raw==null?'':raw).trim(); if(v==='') return '';
+  if(/^-/.test(v.replace(/[$\s]/g,''))) return 'The total can\'t be below $0. If an account is overdrawn, leave it out of the total.';
+  var c=v.replace(/\s/g,'');
+  if(!/^\$?(\d{1,3}(,\d{3})+|\d+)(\.\d*)?$/.test(c) && !/^\$?\.\d+$/.test(c)) return 'Enter the total as a number, like 2450.75.';
+  if(/\.\d{3,}$/.test(c)) return 'Use dollars and cents, with up to 2 numbers after the point.';
+  if(parseAmt(c)>100000000) return 'That looks too large. Check the total.';
+  return '';
+}
+function obStartOf(i){ var c=document.querySelector('#onb [name=ob_ev_'+i+']'), s=document.querySelector('#onb [name=ob_es_'+i+']'), e=OB.envs[i]||{};
+  if(!(c?c.checked:e.on)) return 0; var v=s?s.value.trim():(e.start==null?'':String(e.start)); if(v==='') return 0; var n=parseAmt(v); return n>0?n:0; }
+function obAssigned(){ var t=0; (OB.envs||[]).forEach(function(e,i){ t+=obStartOf(i); }); return round2(t); }
+function obAssignMsg(){
+  var bank=obBank(); if(!(bank>0)) return 'You\'re starting with <b>$0</b>, so every envelope starts empty. Money that comes in later goes to Unallocated, ready to assign.';
+  var as=obAssigned(), left=round2(bank-as);
+  return '<span class="assignrow"><span>Starting money <b>'+money(bank)+'</b></span><span>Assigned <b>'+money(as)+'</b></span></span>'+
+    '<span class="assignleft">Left to assign <b data-left>'+(left<-0.004?'-'+money(-left):money(left))+'</b></span>'+(left<-0.004?'<span class="small">That\'s '+money(-left)+' more than you have. Lower some amounts.</span>':'');
+}
+function obAssignBox(){ var l=round2(obBank()-obAssigned()); return '<div class="banner '+(l<-0.004?'warn':'info')+' obassign" id="obLeft" aria-live="polite">'+obAssignMsg()+'</div>'; }
+function obAssignSet(){ var el=document.getElementById('obLeft'); if(!el) return; var l=round2(obBank()-obAssigned()); el.innerHTML=obAssignMsg(); el.className='banner '+(l<-0.004?'warn':'info')+' obassign'; }
 function obDupNames(){ var seen={}, d=[]; OB.envs.forEach(function(e){ if(!e.on||!e.name) return; var k=e.name.toLowerCase(); if(seen[k] && d.indexOf(seen[k])<0) d.push(seen[k]); else if(!seen[k]) seen[k]=e.name; }); return d; }
 function obValidate(){
   var s=OB.step;
@@ -1250,6 +1293,7 @@ function obValidate(){
       if(!m.name) return 'Give everyone a name (or remove the empty one).';
       if(!(m.perms.autoApprove>=0)) return 'Auto-approve limits must be $0 or more.'; }
   }
+  if(s==='bank'){ var be=obBankErr(OB.bank); if(be){ OB.errField='ob_bank'; return be; } }
   if(s==='birthdays'){ var bk=Object.keys(OB.bdays||{}); for(var b=0;b<bk.length;b++){ var bv=OB.bdays[bk[b]]; if(bv && (!ISO_RE.test(bv)||bv>todayISO())) return 'Birth dates should be real dates, not in the future.'; } }
   if(s==='budget'){
     for(var j=0;j<OB.earners.length;j++){ var e=OB.earners[j];
@@ -1257,6 +1301,10 @@ function obValidate(){
       if(parseAmt(e.amount)>0 && !/^\d{4}-\d{2}-\d{2}$/.test(e.next)) return 'Pick the next payday for '+e.name+'.'; }
     for(var q=0;q<OB.envs.length;q++){ var ev=OB.envs[q]; if(ev.on && !ev.name){ OB.errField='ob_en_'+q; return 'Give each ticked envelope a name, or untick it.'; } if(ev.name.length>30){ OB.errField='ob_en_'+q; return 'Keep envelope names to 30 characters or fewer.'; } }
     if(OB.envs.some(function(e){return e.on && e.amount!=='' && !(e.amount>=0);})) return 'Envelope amounts must be $0 or more.';
+    for(var w=0;w<OB.envs.length;w++){ var sw=OB.envs[w]; if(sw.on && sw.start!=='' && sw.start!=null && !(sw.start>=0)){ OB.errField='ob_es_'+w; return 'Starting amounts must be $0 or more.'; } }
+    var bk2=obBank(), asg=0; OB.envs.forEach(function(e2){ if(e2.on && +e2.start>0) asg+=+e2.start; }); asg=round2(asg);
+    if(asg>bk2+0.004){ OB.errField=''; for(var z=OB.envs.length-1;z>=0;z--){ if(OB.envs[z].on && +OB.envs[z].start>0){ OB.errField='ob_es_'+z; break; } }
+      return 'You\'ve assigned '+money(asg)+' but your starting money is '+money(bk2)+'. Lower some amounts so Left to assign isn\'t below $0.'; }
     if(OB.goal.on && !(+OB.goal.target>0)) return 'Give the Emergency fund a target, or untick it.';
   }
   return '';
@@ -1275,7 +1323,10 @@ function obFinish(){
   var now=Date.now();
   var members=[{id:'m1',name:OB.me.name,kind:'admin',role:'admin',av:'',perms:preset('admin'),color:OB.me.color}];
   OB.members.forEach(function(m,i){ members.push({id:'m'+(i+2),name:m.name,kind:m.kind,role:roleOf(m.kind),av:'',perms:m.perms,color:m.color||AVC[(i+1)%AVC.length]}); });
-  var envelopes=OB.envs.filter(function(e){return e.on && e.name;}).map(function(e,i){ var a=+e.amount||0; return {id:'e'+(i+1),name:e.name,icon:e.icon,monthly:a,balance:0,owner:''}; }); // v7.1: balances start at $0
+  var bank=obBank();
+  var envelopes=OB.envs.filter(function(e){return e.on && e.name;}).map(function(e,i){ var a=+e.amount||0, b=bank>0&&+e.start>0?round2(+e.start):0; return {id:'e'+(i+1),name:e.name,icon:e.icon,monthly:a,balance:b,owner:''}; }); // v7.2: only the starting bank balance can fund envelopes
+  var assigned=round2(envelopes.reduce(function(t,e){return t+e.balance;},0));
+  if(assigned>bank+0.004){ envelopes.forEach(function(e){e.balance=0;}); assigned=0; }
   var goals=OB.goal.on?[{id:'g1',name:'Emergency fund',icon:'shield',target:+OB.goal.target,saved:0,date:''}]:[];
   var st={version:1,currentUser:'m1',tab:'home',members:members,envelopes:envelopes,goals:goals,requests:[],activity:[],reqFilter:'pending',
     setup:{done:true,household:OB.household,mode:OB.mode,requests:OB.household==='single'?false:(OB.household==='couple'?!!OB.requests:true),at:now}};
@@ -1287,7 +1338,10 @@ function obFinish(){
   var bd=OB.bdays||{}, pairs=[['me',members[0]]].concat(OB.members.map(function(m,i){return [m.id,members[i+1]];}));
   st.events=[]; pairs.forEach(function(p){ var d=bd[p[0]]; if(d && ISO_RE.test(d) && p[1]) st.events.push(mkBirthday(p[1],d,'m1')); });
   if(OB.tutSeen) st.tutorialSeen=now;
+  st.unallocated=round2(bank-assigned); st.setup.startBank=bank;
   st.activity.unshift({id:uid(),ts:now,actor:'m1',icon:'check-circle',text:'set up the budget: '+HH[OB.household][1]+', '+(OB.mode==='game'?'Game':'Sleek')+' mode, '+envelopes.length+' envelopes'});
+  st.activity.unshift({id:uid(),ts:now+1,actor:'m1',icon:'banknote',text:'Starting bank balance: '+money(bank)+' across all accounts'+(bank>0?', added to Unallocated income':'')});
+  if(assigned>0){ var nAs=envelopes.filter(function(e){return e.balance>0;}).length; st.activity.unshift({id:uid(),ts:now+2,actor:'m1',icon:'mail',text:'assigned '+money(assigned)+' of the starting bank balance to '+nAs+' envelope'+(nAs===1?'':'s')+'. '+money(st.unallocated)+' left in Unallocated income'}); }
   if(S) snapshot('restart setup');
   S=st; obClose(); save(); processPaydays(); save(); render(); flushFx();
   toast('Welcome, '+OB.me.name+'. Your budget is ready.'+(getSnap()&&OB.restart?' Your old budget can be restored once from Settings.':''));
@@ -1306,14 +1360,15 @@ document.addEventListener('click',function(ev){
     OB.members.forEach(function(m){ m.open=false; });
     OB.members.push({id:'d'+uid(),name:'',def:'',kind:k,perms:preset(k),color:AVC[(OB.members.length+1)%AVC.length],open:k!=='admin'}); return renderOnb(); }
   if(a==='bdays'){ var be=obValidate(); if(be){ var bel=document.getElementById('obErr'); if(bel) bel.textContent=be; return; } OB.step='birthdays'; return renderOnb(); }
-  if(a==='addenv'){ OB.envs.push({name:'',icon:'wallet',amount:'',on:true}); renderOnb(); var ni=obq('ob_en_'+(OB.envs.length-1)); if(ni){ ni.scrollIntoView({block:'center'}); ni.focus(); } return; }
+  if(a==='addenv'){ OB.envs.push({name:'',icon:'wallet',amount:'',start:'',on:true}); renderOnb(); var ni=obq('ob_en_'+(OB.envs.length-1)); if(ni){ ni.scrollIntoView({block:'center'}); ni.focus(); } return; }
   if(a==='delenv'){ var di=+t.getAttribute('data-i'); OB.envs.splice(di,1); renderOnb(); var ea=document.querySelector('#onb [data-ob=addenv]'); if(ea) ea.scrollIntoView({block:'center'}); return; }
   if(a==='tutorial'){ return openTutorial(function(){ if(OB){ OB.tutSeen=true; if(OB.step==='learn') obGo(1); else renderOnb(); } }); }
   if(a==='delm'){ OB.members.splice(+t.getAttribute('data-i'),1); return renderOnb(); }
   if(a==='skip'){
     if(OB.step==='members') OB.members=OB.members.filter(function(m){return m.name && !(m.def && m.name===m.def);}); // skipping adds nobody made up
     if(OB.step==='birthdays') OB.bdays={};
-    if(OB.step==='budget'){ OB.earners.forEach(function(e){e.amount='';}); OB.envs.forEach(function(e){e.on=false;}); OB.goal.on=false; }
+    if(OB.step==='bank') OB.bank='';
+    if(OB.step==='budget'){ OB.earners.forEach(function(e){e.amount='';}); OB.envs.forEach(function(e){e.on=false; e.start='';}); OB.goal.on=false; }
     return obGo(1);
   }
   if(a==='next'||a==='finish'){
@@ -1337,7 +1392,7 @@ document.addEventListener('change',function(ev){
   else if(t.name==='ob_color'){ OB.me.color=t.value; var av=document.querySelector('#onb .obme .av'); if(av) av.style.setProperty('--avc',t.value); }
 });
 function obKeep(t){ // keep what's typed during setup, so a reload doesn't lose it
-  if(!OB||OB.restart||!t.closest||!t.closest('#onb')||['you','members','budget','birthdays'].indexOf(OB.step)<0) return;
+  if(!OB||OB.restart||!t.closest||!t.closest('#onb')||['you','members','bank','budget','birthdays'].indexOf(OB.step)<0) return;
   try{ obRead(); sessionStorage.setItem(OBS_KEY,JSON.stringify(OB)); }catch(e){}
 }
 function obBudgetLive(t){
@@ -1346,6 +1401,7 @@ function obBudgetLive(t){
   if(/^ob_eam_/.test(t.name)) t.setAttribute('data-touched','1');
   if(/^ob_e[af]_|^ob_ev_/.test(t.name)) obScale();
   var s=document.getElementById('obBudgetSum'); if(s) s.innerHTML=obBudgetSum();
+  if(/^ob_es_|^ob_ev_/.test(t.name)){ if(/^ob_es_/.test(t.name)) t.removeAttribute('aria-invalid'); obAssignSet(); }
 }
 document.addEventListener('change',function(ev){ obBudgetLive(ev.target); });
 document.addEventListener('input',function(ev){
@@ -2053,7 +2109,7 @@ function sEnvelope(id){
     field('Name','<input name="name" maxlength="30" value="'+esc(e?e.name:'')+'" placeholder="e.g. School costs">')+
     field('Monthly allocation (AUD)',amtInput('monthly',e?e.monthly:''))+
     (isSingle()?'':field('Whose envelope','<select name="owner"><option value="">Shared (everyone)</option>'+S.members.map(function(m){return '<option value="'+m.id+'"'+(e&&e.owner===m.id?' selected':'')+'>'+esc(m.name)+'</option>';}).join('')+'</select>','People who can\'t see all balances still see their own envelopes.'))+
-    (e?'':field('Starting balance (AUD)',amtInput('balance',''),'Leave blank to start with the monthly amount. It comes out of Unallocated income.')+ufundBox(0)),
+    (e?'':field('Starting balance (AUD)',amtInput('balance',''),'Leave blank to start at $0. Anything you put in comes out of Unallocated income.')+ufundBox(0)),
     e?'Save changes':'Create envelope',function(){
       var nc=envNameCheck(fval('name'),e?e.id:null), name=nc.name, icon=fval('icon')||'wallet', monthly=parseAmt(fval('monthly'));
       if(nc.err) return sheetErr(nc.err,document.querySelector('#sheetForm [name=name]'));
@@ -2065,7 +2121,7 @@ function sEnvelope(id){
         log('edit',changes.length?changes.join(' and '):'updated the '+name+' envelope');
         done('Envelope saved');
       } else {
-        var b=fval('balance')===''?monthly:parseAmt(fval('balance'));
+        var b=fval('balance')===''?0:parseAmt(fval('balance'));
         if(!(b>=0)) return sheetErr('Starting balance must be $0 or more.');
         S.envelopes.push({id:uid(),name:name,icon:icon,monthly:monthly,balance:b,rollTo:'',account:'',perPay:null,owner:fval('owner')||''});
         if(b>0) S.unallocated=round2((S.unallocated||0)-b);
@@ -2074,7 +2130,7 @@ function sEnvelope(id){
       }
     },
     e?'<button type="button" class="btn bad block" style="margin-top:8px" data-action="delenv" data-id="'+e.id+'">Delete envelope</button>':'');
-  if(!e){ sheetLive=function(){ var b=fval('balance'), n=b===''?parseAmt(fval('monthly')):parseAmt(b); ufundSet(n>0?n:0); }; sheetLive(); }
+  if(!e){ sheetLive=function(){ var b=fval('balance'), n=b===''?0:parseAmt(b); ufundSet(n>0?n:0); }; sheetLive(); }
 }
 function delEnv(id){
   var e=env(id); if(!e||!isAdmin()) return;
@@ -2253,7 +2309,9 @@ function sSettings(){
   }
   if(can('addTx')||can('seeAll')) body+='<button type="button" class="btn block" data-tab="bank" style="margin-bottom:10px">'+ic('bank','sm')+' Bank accounts &amp; statement import</button>';
   body+=paySettings()+
-  '<div class="field" id="helpSettings"><label>Help</label><button type="button" class="btn block" data-action="tutorial">'+ic('help','sm')+' View envelope budgeting tutorial</button><div class="hint">Six short cards, about a minute.'+(S.tutorialSeen?' Last viewed '+whenText(S.tutorialSeen)+'.':'')+'</div></div>'+
+  '<div class="field" id="helpSettings"><label>Help and about</label><button type="button" class="btn block" data-action="tutorial">'+ic('help','sm')+' View envelope budgeting tutorial</button><div class="hint">Six short cards, about a minute.'+(S.tutorialSeen?' Last viewed '+whenText(S.tutorialSeen)+'.':'')+'</div>'+
+    '<div class="aboutrow"><span>OrbitAll Money</span><b id="aboutVersion">Version '+APP_VERSION+'</b></div>'+
+    (can('settings')?'<div class="hint">Seeing old data, or want a clean slate? Use <b>Start over</b> at the bottom of Settings.</div>':'')+'</div>'+
   '<div class="banner">Your data is saved in this browser on this device only. It doesn\'t sync between phones yet.</div>'+
   '<div class="field"><label>Sounds and celebrations (this device)</label>'+
   '<label class="toggle"><span>'+ic('volume','sm')+' Sounds</span><input type="checkbox" id="soundToggle"'+(S.settings.sound?' checked':'')+'></label>'+
@@ -2289,7 +2347,23 @@ function backupSection(){
     (sn?'<button type="button" class="btn block" data-action="undosnap" style="margin-top:8px">'+ic('rotate','sm')+' Undo last '+esc(sn.reason)+' ('+whenText(sn.at)+')</button>':'')+
   '</div>'+
   '<button type="button" class="btn block" data-action="restartsetup" style="margin-bottom:8px">'+ic('rotate','sm')+' Restart setup</button>'+
-  '<button type="button" class="btn bad block" data-action="reset" style="margin-bottom:8px">'+(S.setup&&S.setup.demo?'Reset demo data':'Erase all data')+'</button>';
+  (S.setup&&S.setup.demo?'<button type="button" class="btn bad block" data-action="reset" style="margin-bottom:8px">Reset demo data</button>':'')+
+  '<div class="field dangerzone" id="startOverField"><label>Start over</label><div class="hint" style="margin-top:0">Erases all data on this device and goes back to the welcome screen so you can set up from scratch. Download a backup first if you might want it back.</div>'+
+  '<button type="button" class="btn bad block" data-action="startover">'+ic('trash','sm')+' Start over</button></div>';
+}
+function sStartOver(){
+  if(!can('settings')) return toast('Only someone who can manage settings can start over');
+  openSheet('Start over',
+    '<div class="banner warn"><b>This erases all data on this device</b> and takes you back to the welcome screen to set up again. You\'ll lose:</div>'+lossList()+
+    '<p class="small"><b>Download a backup first</b> so you can restore it later if you need to.</p>'+
+    '<button type="button" class="btn block" data-action="exportbackup" style="margin:4px 0 12px">'+ic('download','sm')+' Download a backup first</button>'+
+    '<p class="small">A copy is also kept on this device so you can undo it once from the welcome screen.</p>'+confirmField(),
+    'Erase and start over',function(){
+      if(!confirmed()) return;
+      snapshot('start over');
+      closeSheet(); S=null; try{ localStorage.removeItem(KEY); }catch(e){} try{ sessionStorage.removeItem(OBS_KEY); }catch(e){}
+      startOnboarding(false); toast('All data on this device was erased. Set up from the start.');
+    });
 }
 function paySettings(){
   var adm=can('settings'), dis=adm?'':' disabled';
@@ -3489,6 +3563,7 @@ document.addEventListener('click',function(ev){
     case 'addmember': addMember(id); break;
     case 'members': sMembers(); break;
     case 'delmember': delMember(id); break;
+    case 'startover': sStartOver(); break;
     case 'restartsetup': sRestart(); break;
     case 'exportbackup': exportBackup(); break;
     case 'undosnap': undoSnap(); break;
